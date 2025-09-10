@@ -4,6 +4,24 @@ import { Destino } from '@/types/destino';
 import { getDestinoById } from '@/services/destinoService';
 import { useEffect, useState } from 'react';
 
+// Funções de formatação consistentes para evitar erro de hidratação
+const formatPrice = (price: number): string => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(price);
+};
+
+const formatDate = (dateString: string): string => {
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(new Date(dateString));
+};
+
 export default function DetalheDestino() {
   const router = useRouter();
   const { id } = router.query;
@@ -78,7 +96,7 @@ export default function DetalheDestino() {
 
               <div className="mt-3">
                 <h2 className="sr-only">Detalhes da viagem</h2>
-                <p className="text-3xl text-gray-900">R$ {destino.preco.toLocaleString()}</p>
+                <p className="text-3xl text-gray-900">{formatPrice(destino.preco)}</p>
               </div>
 
               <div className="mt-6">
@@ -112,8 +130,8 @@ export default function DetalheDestino() {
                 <h2 className="text-sm font-medium text-gray-900">Informações importantes</h2>
                 <div className="mt-4 prose prose-sm text-gray-500">
                   <ul role="list">
-                    <li>Data de início: {new Date(destino.dataInicio).toLocaleDateString()}</li>
-                    <li>Data de término: {new Date(destino.dataFim).toLocaleDateString()}</li>
+                    <li>Data de início: {formatDate(destino.dataInicio)}</li>
+                    <li>Data de término: {formatDate(destino.dataFim)}</li>
                     <li>Vagas disponíveis: {destino.vagas}</li>
                     <li>Localização: {destino.localizacao}</li>
                     <li>Categoria: {destino.categoria}</li>
