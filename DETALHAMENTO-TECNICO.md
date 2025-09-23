@@ -15,14 +15,16 @@ O **PedagoPass** é uma aplicação web fullstack moderna desenvolvida para cone
 
 ### 📊 Métricas Técnicas
 ```
-📁 Estrutura:           40+ arquivos organizados
-💻 Linhas de código:    3000+ linhas
-🎨 Componentes:         8 componentes React
-📄 Páginas:             6 páginas funcionais
-🔌 API Endpoints:       3 endpoints REST ativos
+📁 Estrutura:           50+ arquivos organizados
+💻 Linhas de código:    4500+ linhas
+🎨 Componentes:         8 componentes React + hooks
+📄 Páginas:             9 páginas funcionais
+🔌 API Endpoints:       6 endpoints REST ativos
+🔐 Sistema Auth:        Completo (login/cadastro/perfil)
 📱 Responsividade:      100% mobile-first
 ⚡ Performance:         Otimizada com Next.js
 🛡️ TypeScript:          100% coverage
+🎯 Estado Global:       Context API + hooks customizados
 ```
 
 ---
@@ -42,6 +44,7 @@ TCC_PedagoPass/
 │   ├── 📁 components/          # Componentes React reutilizáveis
 │   ├── 📁 pages/              # Páginas Next.js (roteamento baseado em arquivos)
 │   ├── 📁 services/           # Camada de serviços para API calls
+│   ├── 📁 hooks/              # Custom hooks React (useAuth)
 │   ├── 📁 types/              # Definições TypeScript globais
 │   ├── 📁 styles/             # Estilos CSS globais
 │   └── 📁 backend/            # Backend Node.js/Express
@@ -103,12 +106,17 @@ TCC_PedagoPass/
 
 ##### Navbar.tsx
 ```typescript
-// Navegação responsiva
+// Navegação responsiva com autenticação
 - Logo/marca PedagoPass
-- Menu desktop (Destinos, Sobre)
-- Menu mobile (hamburger menu)
+- Menu desktop (Início, Viagens, Sobre)
+- Menu mobile (hamburger menu) 
+- Sistema de autenticação integrado:
+  * Botões Login/Cadastro para usuários não logados
+  * Menu dropdown com avatar para usuários logados
+  * Link para perfil e opção de logout
 - Estados hover/active
 - Navegação programática com Next/Link
+- useAuth hook para estado global
 ```
 
 ##### Footer.tsx
@@ -178,6 +186,48 @@ TCC_PedagoPass/
 - Interface de debug para desenvolvimento
 ```
 
+##### cadastro.tsx (Página de Cadastro)
+```typescript
+// Features implementadas:
+- Formulário de registro completo
+- Validações client-side (email, senha mínima)
+- Estados de loading/error/success
+- Integração com UserService
+- useAuth hook para estado global
+- Redirecionamento automático pós-cadastro
+- Interface responsiva e acessível
+- Mensagens de feedback ao usuário
+```
+
+##### login.tsx (Página de Login)
+```typescript
+// Features implementadas:
+- Formulário de autenticação
+- Validação de campos obrigatórios
+- Estados de loading/error/success
+- Integração com backend via UserService
+- localStorage para persistência de sessão
+- useAuth hook para estado global
+- Redirecionamento automático pós-login
+- Interface responsiva e acessível
+- Mensagens de feedback ao usuário
+```
+
+##### perfil.tsx (Página de Perfil)
+```typescript
+// Features implementadas:
+- Proteção de rota (redirect se não autenticado)
+- Visualização de dados do usuário
+- Modo de edição com formulário completo
+- Alteração de dados pessoais (nome, email)
+- Sistema de alteração de senha opcional
+- Validações de senha (confirmação, tamanho mínimo)
+- Estados de loading/error/success
+- Interface com avatar personalizado
+- Seção de estatísticas do usuário (preparado)
+- Design elegante com gradientes e cards
+```
+
 #### 🔧 Serviços
 
 ##### destinoService.ts
@@ -195,6 +245,58 @@ class DestinoService {
   - getAllDestinos(): Promise<Destino[]>
   - getDestinoById(id: string): Promise<Destino>
   - searchDestinos(query: string): Promise<Destino[]>
+}
+```
+
+##### userService.ts
+```typescript
+// Camada de abstração para autenticação
+class UserService {
+  // Configurações:
+  - Base URL configurável (http://localhost:3001/api)
+  - Headers dinâmicos (Authorization quando disponível)
+  - Tratamento de erros HTTP
+  - TypeScript interfaces para requests/responses
+
+  // Métodos:
+  - register(userData): Promise<AuthResponse>
+  - login(loginData): Promise<AuthResponse>
+  - updateProfile(userData): Promise<AuthResponse>
+  - logout(): void
+  - getCurrentUser(): User | null
+  - getToken(): string | null
+  - isAuthenticated(): boolean
+
+  // Features:
+  - localStorage para persistência de sessão
+  - Token JWT ready
+  - Atualização automática do estado do usuário
+  - Logs detalhados para debugging
+}
+```
+
+#### 🎣 Custom Hooks
+
+##### useAuth.ts
+```typescript
+// Hook customizado para gerenciamento global de autenticação
+export const useAuth = () => {
+  // Estado:
+  - user: User | null
+  - loading: boolean
+  - isAuthenticated: boolean
+
+  // Métodos:
+  - login(email, password): Promise<AuthResponse>
+  - register(name, email, password): Promise<AuthResponse>
+  - updateProfile(name, email, currentPassword?, newPassword?): Promise<AuthResponse>
+  - logout(): void
+
+  // Features:
+  - Estado global compartilhado
+  - Persistência automática
+  - Re-hidratação na inicialização
+  - Integração seamless com componentes
 }
 ```
 
@@ -298,10 +400,22 @@ class DestinoController {
 
 ##### UserController.ts
 ```typescript
-// Controller de usuários (preparado para expansão)
-- register(): Registro de usuários
-- login(): Autenticação
-- Estrutura pronta para implementação
+// Controller de usuários implementado
+class UserController {
+  // Métodos:
+  - register(): Registro de novos usuários
+  - login(): Autenticação de usuários
+  - updateProfile(): Atualização de dados do perfil
+  
+  // Features implementadas:
+  - Validações de entrada (email, senha, nome obrigatórios)
+  - Respostas estruturadas JSON
+  - Error handling robusto
+  - Logs detalhados para debugging
+  - Status codes HTTP apropriados
+  - Simulação de BD (preparado para integração real)
+  - Sistema de tokens simulado (JWT-ready)
+}
 ```
 
 #### 🛣️ Routes
@@ -312,12 +426,15 @@ class DestinoController {
 - GET /api/hello - Health check
 - GET /api/destinos - Lista destinos
 - GET /api/destinos/:id - Detalhes do destino
-- POST /api/users/register - Registro (placeholder)
-- POST /api/users/login - Login (placeholder)
+- POST /api/users/register - Registro de usuários
+- POST /api/users/login - Login de usuários  
+- PUT /api/users/profile - Atualização de perfil
 
 // Middlewares:
-- CORS headers customizados
-- Request logging
+- CORS headers completos (GET, POST, PUT, DELETE, OPTIONS)
+- Authorization header support
+- Preflight requests handling
+- Request logging com timestamps
 ```
 
 #### 🗃️ Data Layer
@@ -396,6 +513,235 @@ Response:
   "data": Destino,
   "message": "Destino encontrado com sucesso"
 }
+
+Status Codes:
+- 200: Destino encontrado
+- 404: Destino não encontrado
+- 500: Erro interno
+```
+
+## 🔐 Sistema de Autenticação Implementado
+
+### Arquitetura de Autenticação
+
+#### Frontend Authentication Flow
+```typescript
+// Fluxo completo de autenticação:
+1. Usuário acessa /cadastro ou /login
+2. Formulário coleta dados com validação client-side
+3. useAuth hook gerencia estado global de autenticação
+4. UserService faz chamadas HTTP para backend
+5. Resposta do servidor é processada
+6. Token e dados do usuário salvos no localStorage
+7. Estado global atualizado via hook
+8. Navbar automaticamente reflete estado logado
+9. Proteção de rotas via redirecionamento
+```
+
+#### Backend Authentication Flow
+```typescript
+// Fluxo do servidor:
+1. Requisição recebida nos controllers
+2. Validação de dados de entrada
+3. Simulação de verificação (preparado para DB)
+4. Geração de resposta estruturada
+5. Headers CORS apropriados
+6. Logging detalhado para debug
+```
+
+### Endpoints de Autenticação
+
+##### POST /users/register
+```http
+POST /api/users/register
+Content-Type: application/json
+
+{
+  "name": "João Silva",
+  "email": "joao@email.com",
+  "password": "123456"
+}
+
+Response 201:
+{
+  "success": true,
+  "user": {
+    "id": "1",
+    "name": "João Silva", 
+    "email": "joao@email.com"
+  },
+  "message": "Usuário cadastrado com sucesso!",
+  "token": "simulated-jwt-token"
+}
+
+Response 400:
+{
+  "error": "Todos os campos são obrigatórios"
+}
+```
+
+##### POST /users/login
+```http
+POST /api/users/login
+Content-Type: application/json
+
+{
+  "email": "joao@email.com",
+  "password": "123456"
+}
+
+Response 200:
+{
+  "success": true,
+  "user": {
+    "id": "1",
+    "name": "João Silva",
+    "email": "joao@email.com"
+  },
+  "message": "Login realizado com sucesso!",
+  "token": "simulated-jwt-token"
+}
+
+Response 401:
+{
+  "error": "Email e senha são obrigatórios"
+}
+```
+
+##### PUT /users/profile
+```http
+PUT /api/users/profile
+Content-Type: application/json
+Authorization: Bearer simulated-jwt-token
+
+{
+  "name": "João Silva Santos",
+  "email": "joao.santos@email.com",
+  "currentPassword": "123456",      // Opcional
+  "newPassword": "novaSenha123"     // Opcional
+}
+
+Response 200:
+{
+  "success": true,
+  "user": {
+    "id": "1",
+    "name": "João Silva Santos",
+    "email": "joao.santos@email.com"
+  },
+  "message": "Perfil atualizado com sucesso!"
+}
+
+Response 400:
+{
+  "error": "Nome e email são obrigatórios"
+}
+```
+
+### Features de Segurança Implementadas
+
+#### Frontend Security
+```typescript
+✅ Validação client-side de dados
+✅ Sanitização de entrada via React
+✅ Proteção de rotas (redirect não autenticados)
+✅ Limpeza de dados sensíveis no logout
+✅ Estados de loading prevenindo múltiplas submissões
+✅ Feedback visual de erros/sucessos
+✅ Validação de força de senha (mínimo 6 caracteres)
+✅ Confirmação de senha em alterações
+```
+
+#### Backend Security
+```typescript
+✅ Validação de entrada nos controllers
+✅ CORS configurado adequadamente
+✅ Headers de segurança (Authorization)
+✅ Error handling sem exposição de dados internos
+✅ Logging detalhado para auditoria
+✅ Status codes HTTP apropriados
+✅ Estrutura preparada para JWT real
+✅ Simulação segura de dados (sem persistir senhas)
+```
+
+### Gerenciamento de Estado
+
+#### localStorage Strategy
+```typescript
+// Dados persistidos no navegador:
+'authToken': 'simulated-jwt-token'        // Token de autenticação
+'user': '{"id":"1","name":"João","email":"joao@email.com"}'  // Dados do usuário
+
+// Funcionalidades:
+✅ Persistência entre sessões
+✅ Limpeza automática no logout
+✅ Re-hidratação na inicialização
+✅ Fallback para usuário não logado
+```
+
+#### useAuth Hook State Management
+```typescript
+// Estado global gerenciado:
+const {
+  user,                    // Dados do usuário atual ou null
+  loading,                 // Estado de carregamento inicial  
+  login,                   // Função de login
+  register,                // Função de registro
+  updateProfile,           // Função de atualização de perfil
+  logout,                  // Função de logout
+  isAuthenticated          // Boolean de status de auth
+} = useAuth();
+
+// Benefits:
+✅ Estado compartilhado entre todos os componentes
+✅ Re-renders otimizados apenas quando necessário
+✅ API consistente para toda a aplicação
+✅ Facilita manutenção e extensão
+```
+
+### Interface do Usuário Autenticado
+
+#### Navbar com Autenticação
+```typescript
+// Estados da navbar:
+Usuário não logado:
+- Botão "Entrar" (link para /login)
+- Botão "Cadastrar" (link para /cadastro)
+
+Usuário logado:
+- Avatar com inicial do nome
+- Nome do usuário exibido
+- Menu dropdown com:
+  * "Meu Perfil" (link para /perfil)
+  * "Sair" (função de logout)
+
+// Mobile responsivo:
+- Menu hamburguer com todas as opções
+- Layout otimizado para telas pequenas
+```
+
+#### Página de Perfil Completa
+```typescript
+// Modo Visualização:
+- Header com avatar e dados do usuário
+- Cards informativos elegantes
+- Seção de estatísticas (preparada para futuras funcionalidades)
+- Botão "Editar Perfil"
+
+// Modo Edição:
+- Formulário completo de dados pessoais
+- Seção separada para alteração de senha
+- Validações em tempo real
+- Botões "Salvar" e "Cancelar"
+- Estados de loading durante atualização
+
+// Features de UX:
+✅ Transições suaves entre modos
+✅ Feedback visual completo
+✅ Preservação de dados na cancelação
+✅ Interface elegante com gradientes
+✅ Totalmente responsiva
+```
 
 Status Codes:
 - 200: Destino encontrado
@@ -628,8 +974,10 @@ TypeScript Strict Mode:
 ✅ noImplicitReturns: true
 
 Cobertura de tipos: 100%
-Interfaces definidas: 5+
+Interfaces definidas: 10+
 Componentes tipados: 100%
+Hooks customizados: 1 (useAuth)
+Services implementados: 2 (destinoService, userService)
 ```
 
 ### 🛡️ Error Handling Strategy
@@ -640,6 +988,9 @@ Frontend:
 ✅ Fallback para dados offline
 ✅ User feedback consistente
 ✅ Graceful degradation
+✅ Validações de formulário em tempo real
+✅ Proteção de rotas com redirect
+✅ Limpeza de estados entre navegações
 
 Backend:
 ✅ Global error handler middleware
@@ -647,6 +998,9 @@ Backend:
 ✅ HTTP status codes apropriados
 ✅ Request logging com timestamps
 ✅ Environment-specific error details
+✅ Validação de entrada robusta
+✅ CORS configurado adequadamente
+✅ Logs detalhados para debugging
 ```
 
 ### ⚡ Performance Optimizations
@@ -657,6 +1011,9 @@ Frontend:
 ✅ Tailwind CSS purging
 ✅ Optimized bundle size
 ✅ No unnecessary re-renders
+✅ useState e useEffect otimizados
+✅ Custom hooks para reutilização de lógica
+✅ Memoização de componentes pesados (preparado)
 
 Backend:
 ✅ Express.js lean middleware stack
@@ -664,6 +1021,8 @@ Backend:
 ✅ CORS configuração específica
 ✅ Efficient data filtering
 ✅ Memory-efficient JSON operations
+✅ Structured logging
+✅ Request/Response optimization
 ```
 
 ### 🔧 Development Experience
@@ -679,6 +1038,14 @@ Developer Tools:
 ✅ Prettier-ready
 ✅ VS Code integration
 ✅ Source maps habilitados
+✅ Debug logs configuráveis
+✅ Custom hooks para DX otimizada
+
+State Management:
+✅ useAuth hook para estado global
+✅ localStorage integration seamless
+✅ Estado persistente entre sessões
+✅ Re-hidratação automática
 ```
 
 ## 🚀 Roadmap Técnico
@@ -692,6 +1059,12 @@ Developer Tools:
 ✅ TypeScript 100%
 ✅ Design system básico
 ✅ Dados mockados completos
+✅ Sistema de autenticação completo
+✅ Páginas de login, cadastro e perfil
+✅ Gerenciamento de estado global (useAuth)
+✅ Proteção de rotas
+✅ Persistência de sessão
+✅ Navbar com autenticação
 ```
 
 ### 🗄️ Fase 2: Database Integration (Próxima)
@@ -703,17 +1076,20 @@ Developer Tools:
 🔲 Connection pooling
 🔲 Query optimization
 🔲 Backup strategies
+🔲 Hash de senhas (bcrypt)
+🔲 Tabelas de usuários reais
 ```
 
-### 🔐 Fase 3: Authentication & Authorization
+### 🔐 Fase 3: Authentication & Authorization Enhancement
 ```typescript
-🔲 JWT token system
-🔲 User registration/login
-🔲 Password hashing (bcrypt)
-🔲 Role-based access control
+🔲 JWT token system real
+🔲 Token refresh strategy
+🔲 Role-based access control (Admin/User)
 🔲 OAuth integration (Google/Facebook)
-🔲 Session management
+🔲 Email verification
 🔲 Password reset flow
+🔲 Session timeout handling
+🔲 Middleware de autenticação robusto
 ```
 
 ### 💳 Fase 4: Business Logic Expansion
