@@ -21,7 +21,7 @@ const Navbar = () => {
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <h1 className="text-xl md:text-2xl font-bold tracking-wide">
-                PedagoPass – Viagens para Professores
+                PedagoPass – Rede Social Educativa
               </h1>
             </div>
           </div>
@@ -29,22 +29,28 @@ const Navbar = () => {
           <div className="hidden md:flex items-center space-x-6">
             <div className="flex items-baseline space-x-6">
               <a 
-                href="/" 
+                href="/feed" 
                 className="hover:bg-blue-700 hover:bg-opacity-75 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ease-in-out transform hover:scale-105"
               >
-                Início
+                Feed
+              </a>
+              <a 
+                href="/comunidades" 
+                className="hover:bg-blue-700 hover:bg-opacity-75 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ease-in-out transform hover:scale-105"
+              >
+                Comunidades
               </a>
               <a 
                 href="/destinos" 
                 className="hover:bg-blue-700 hover:bg-opacity-75 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ease-in-out transform hover:scale-105"
               >
-                Viagens
+                Roteiros
               </a>
               <a 
-                href="/sobre" 
+                href="/sobre-nos" 
                 className="hover:bg-blue-700 hover:bg-opacity-75 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ease-in-out transform hover:scale-105"
               >
-                Sobre
+                Sobre Nós
               </a>
             </div>
 
@@ -123,14 +129,17 @@ const Navbar = () => {
         {isMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-blue-500">
-              <a href="/" className="block hover:bg-blue-700 px-3 py-2 rounded-md text-base font-medium">
-                Início
+              <a href="/feed" className="block hover:bg-blue-700 px-3 py-2 rounded-md text-base font-medium">
+                Feed
+              </a>
+              <a href="/comunidades" className="block hover:bg-blue-700 px-3 py-2 rounded-md text-base font-medium">
+                Comunidades
               </a>
               <a href="/destinos" className="block hover:bg-blue-700 px-3 py-2 rounded-md text-base font-medium">
-                Viagens
+                Roteiros
               </a>
-              <a href="/sobre" className="block hover:bg-blue-700 px-3 py-2 rounded-md text-base font-medium">
-                Sobre
+              <a href="/sobre-nos" className="block hover:bg-blue-700 px-3 py-2 rounded-md text-base font-medium">
+                Sobre Nós
               </a>
               {user ? (
                 <>
