@@ -2,6 +2,8 @@ import { Router } from 'express';
 import HelloController from '../controllers/HelloController';
 import UserController from '../controllers/UserController';
 import DestinoController from '../controllers/DestinoController';
+import { PostController } from '../controllers/PostController';
+import { PointsController } from '../controllers/PointsController';
 
 const router = Router();
 
@@ -31,5 +33,21 @@ router.put('/users/profile', UserController.updateProfile);
 // Rotas de destinos
 router.get('/destinos', DestinoController.index);
 router.get('/destinos/:id', DestinoController.show);
+
+// Instanciar controllers
+const postController = new PostController();
+const pointsController = new PointsController();
+
+// Rotas de posts
+router.get('/posts', (req, res) => postController.getAllPosts(req, res));
+router.get('/posts/:id', (req, res) => postController.getPostById(req, res));
+router.post('/posts', (req, res) => postController.createPost(req, res));
+router.post('/posts/:id/like', (req, res) => postController.toggleLikePost(req, res));
+router.get('/posts/user/:userId', (req, res) => postController.getPostsByUser(req, res));
+
+// Rotas de pontos
+router.get('/users/:userId/points', (req, res) => pointsController.getUserPoints(req, res));
+router.get('/users/me/points', (req, res) => pointsController.getMyPoints(req, res));
+router.post('/points/award', (req, res) => pointsController.awardPoints(req, res));
 
 export default router;

@@ -3,6 +3,13 @@ import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/hooks/useAuth';
 import Head from 'next/head';
+import { 
+  getMyPoints, 
+  UserPoints, 
+  getLevelColor, 
+  getLevelBgColor, 
+  calculateNextLevelPoints 
+} from '@/services/pointsService';
 
 function PerfilPage() {
   const { user, isAuthenticated, updateProfile } = useAuth();
@@ -10,6 +17,9 @@ function PerfilPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [userPoints, setUserPoints] = useState<UserPoints | null>(null);
+  const [pointsLoading, setPointsLoading] = useState(true);
+  const [pointsError, setPointsError] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -18,6 +28,20 @@ function PerfilPage() {
     confirmPassword: '',
   });
   const router = useRouter();
+
+  // Função para carregar pontos do usuário
+  const loadUserPoints = async () => {
+    try {
+      setPointsLoading(true);
+      const points = await getMyPoints();
+      setUserPoints(points);
+    } catch (err) {
+      console.error('Erro ao carregar pontos:', err);
+      setPointsError('Erro ao carregar pontos do usuário');
+    } finally {
+      setPointsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -31,6 +55,9 @@ function PerfilPage() {
         name: user.name,
         email: user.email,
       }));
+      
+      // Carregar pontos do usuário
+      loadUserPoints();
     }
   }, [user, isAuthenticated, router]);
 
@@ -157,27 +184,61 @@ function PerfilPage() {
             {/* Sistema de Pontos */}
             <div className="bg-gray-50 px-6 py-6 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Minha Pontuação PedagoPass</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                
-                {/* Pontos Totais */}
-                <div className="bg-blue-600 text-white p-4 rounded-lg text-center">
-                  <div className="text-3xl font-bold mb-1">1,250</div>
-                  <div className="text-blue-100 text-sm">Pontos Totais</div>
+              
+              {pointsLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
+              ) : pointsError ? (
+                <div className="text-red-600 text-center py-4">{pointsError}</div>
+              ) : userPoints ? (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Pontos Totais */}
+                    <div className="bg-blue-600 text-white p-4 rounded-lg text-center">
+                      <div className="text-3xl font-bold mb-1">{userPoints.totalPoints.toLocaleString()}</div>
+                      <div className="text-blue-100 text-sm">Pontos Totais</div>
+                    </div>
 
-                {/* Nível */}
-                <div className="bg-green-600 text-white p-4 rounded-lg text-center">
-                  <div className="text-3xl font-bold mb-1">Ouro</div>
-                  <div className="text-green-100 text-sm">Nível Atual</div>
-                </div>
+                    {/* Nível */}
+                    <div className={`p-4 rounded-lg text-center text-white ${
+                      userPoints.level === 'Gold' ? 'bg-yellow-500' :
+                      userPoints.level === 'Silver' ? 'bg-gray-500' : 'bg-orange-500'
+                    }`}>
+                      <div className="text-3xl font-bold mb-1">{userPoints.level === 'Gold' ? 'Ouro' : userPoints.level === 'Silver' ? 'Prata' : 'Bronze'}</div>
+                      <div className="text-white/80 text-sm">Nível Atual</div>
+                    </div>
 
-                {/* Este Mês */}
-                <div className="bg-purple-600 text-white p-4 rounded-lg text-center">
-                  <div className="text-3xl font-bold mb-1">+85</div>
-                  <div className="text-purple-100 text-sm">Este Mês</div>
-                </div>
+                    {/* Próximo Nível */}
+                    <div className="bg-purple-600 text-white p-4 rounded-lg text-center">
+                      <div className="text-3xl font-bold mb-1">
+                        {userPoints.nextLevelPoints > 0 ? userPoints.nextLevelPoints : '✓'}
+                      </div>
+                      <div className="text-purple-100 text-sm">
+                        {userPoints.nextLevelPoints > 0 ? 'Para Próximo Nível' : 'Nível Máximo'}
+                      </div>
+                    </div>
+                  </div>
 
-              </div>
+                  {/* Progresso para próximo nível */}
+                  {userPoints.nextLevelPoints > 0 && (
+                    <div className="mt-4">
+                      <div className="flex justify-between text-sm text-gray-600 mb-1">
+                        <span>Progresso para próximo nível</span>
+                        <span>{Math.round((1 - userPoints.nextLevelPoints / (userPoints.level === 'Bronze' ? 500 : 1000)) * 100)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                          style={{ 
+                            width: `${Math.round((1 - userPoints.nextLevelPoints / (userPoints.level === 'Bronze' ? 500 : 1000)) * 100)}%` 
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : null}
 
               {/* Como Ganhar Pontos */}
               <div className="mt-6">
@@ -218,48 +279,75 @@ function PerfilPage() {
             {/* Atividades Recentes */}
             <div className="px-6 py-6 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Atividades Recentes</h3>
-              <div className="space-y-3">
-                
-                <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-blue-600 text-sm">📝</span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Post sobre Paris publicado</p>
-                      <p className="text-xs text-gray-500">Há 2 dias</p>
-                    </div>
-                  </div>
-                  <span className="text-blue-600 text-sm font-medium">+10 pts</span>
+              
+              {pointsLoading ? (
+                <div className="flex justify-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
                 </div>
+              ) : userPoints && userPoints.activities.length > 0 ? (
+                <div className="space-y-3">
+                  {userPoints.activities.slice(0, 5).map((activity) => {
+                    const getActivityIcon = (type: string) => {
+                      switch (type) {
+                        case 'post': return '📝';
+                        case 'like': return '❤️';
+                        case 'comment': return '💬';
+                        case 'community_join': return '�';
+                        case 'travel_complete': return '✈️';
+                        default: return '🎯';
+                      }
+                    };
 
-                <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                      <span className="text-green-600 text-sm">👥</span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Ingressou na comunidade "Professores de História"</p>
-                      <p className="text-xs text-gray-500">Há 5 dias</p>
-                    </div>
-                  </div>
-                  <span className="text-green-600 text-sm font-medium">+15 pts</span>
+                    const getActivityColor = (type: string) => {
+                      switch (type) {
+                        case 'post': return 'blue';
+                        case 'like': return 'red';
+                        case 'comment': return 'purple';
+                        case 'community_join': return 'green';
+                        case 'travel_complete': return 'yellow';
+                        default: return 'gray';
+                      }
+                    };
+
+                    const formatActivityDate = (dateString: string): string => {
+                      const date = new Date(dateString);
+                      const now = new Date();
+                      const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+                      
+                      if (diffInDays === 0) return 'Hoje';
+                      if (diffInDays === 1) return 'Ontem';
+                      if (diffInDays < 7) return `Há ${diffInDays} dias`;
+                      if (diffInDays < 30) return `Há ${Math.floor(diffInDays / 7)} semanas`;
+                      return `Há ${Math.floor(diffInDays / 30)} meses`;
+                    };
+
+                    const color = getActivityColor(activity.type);
+
+                    return (
+                      <div key={activity.id} className="flex items-center justify-between py-3 border-b border-gray-100">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 bg-${color}-100 rounded-full flex items-center justify-center`}>
+                            <span className={`text-${color}-600 text-sm`}>{getActivityIcon(activity.type)}</span>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">{activity.description}</p>
+                            <p className="text-xs text-gray-500">{formatActivityDate(activity.createdAt)}</p>
+                          </div>
+                        </div>
+                        <span className={`text-${color}-600 text-sm font-medium`}>+{activity.points} pts</span>
+                      </div>
+                    );
+                  })}
                 </div>
-
-                <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                      <span className="text-purple-600 text-sm">💬</span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Comentou em "Viagem para Roma"</p>
-                      <p className="text-xs text-gray-500">Há 1 semana</p>
-                    </div>
-                  </div>
-                  <span className="text-purple-600 text-sm font-medium">+5 pts</span>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <svg className="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  <p>Nenhuma atividade registrada ainda.</p>
+                  <p className="text-sm">Comece criando posts e participando de comunidades!</p>
                 </div>
-
-              </div>
+              )}
             </div>
 
             {/* Benefícios Disponíveis */}

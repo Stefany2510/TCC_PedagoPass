@@ -1,91 +1,121 @@
 import Layout from '@/components/Layout';
 import Head from 'next/head';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { 
+  getAllPosts, 
+  createPost, 
+  toggleLikePost, 
+  Post,
+  CreatePostData 
+} from '@/services/postService';
+import { awardPoints } from '@/services/pointsService';
 
-interface Post {
-  id: string;
-  author: string;
-  title: string;
-  content: string;
-  image?: string;
-  location: string;
-  date: string;
-  likes: number;
-  comments: number;
-}
-
-// Posts mockados para demonstração
-const mockPosts: Post[] = [
-  {
-    id: '1',
-    author: 'Prof. Ana Maria',
-    title: 'Viagem incrível para Paris!',
-    content: 'Acabei de voltar de uma viagem educacional amazing para Paris. Visitamos o Louvre e foi uma experiência transformadora para minha prática pedagógica!',
-    image: 'https://images.pexels.com/photos/161853/eiffel-tower-paris-france-tower-161853.jpeg?auto=compress&cs=tinysrgb&w=400',
-    location: 'Paris, França',
-    date: '2 dias atrás',
-    likes: 24,
-    comments: 8
-  },
-  {
-    id: '2',
-    author: 'Prof. Carlos Silva',
-    title: 'Museus de História em Roma',
-    content: 'Compartilhando algumas dicas de museus imperdíveis em Roma para professores de História. A experiência no Coliseu foi inesquecível!',
-    image: 'https://images.pexels.com/photos/2225442/pexels-photo-2225442.jpeg?auto=compress&cs=tinysrgb&w=400',
-    location: 'Roma, Itália',
-    date: '5 dias atrás',
-    likes: 31,
-    comments: 12
-  },
-  {
-    id: '3',
-    author: 'Profa. Mariana Costa',
-    title: 'Intercâmbio Cultural no Japão',
-    content: 'Que experiência única! Participar do programa de intercâmbio no Japão abriu minha mente para novas metodologias de ensino.',
-    location: 'Tóquio, Japão',
-    date: '1 semana atrás',
-    likes: 45,
-    comments: 15
-  }
-];
+// Estado para armazenar posts vindos da API
 
 export default function Feed() {
-  const [posts, setPosts] = useState<Post[]>(mockPosts);
-  const [newPost, setNewPost] = useState({
+  const { user } = useAuth();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [newPost, setNewPost] = useState<CreatePostData>({
     title: '',
     content: '',
     location: ''
   });
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleCreatePost = (e: React.FormEvent) => {
+  // Carregar posts quando o componente montar
+  useEffect(() => {
+    loadPosts();
+  }, []);
+
+  const loadPosts = async () => {
+    try {
+      setLoading(true);
+      const postsData = await getAllPosts();
+      setPosts(postsData);
+    } catch (err) {
+      setError('Erro ao carregar posts');
+      console.error('Erro ao carregar posts:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!newPost.title || !newPost.content || !newPost.location) return;
+    if (!user) {
+      setError('Você precisa estar logado para criar posts');
+      return;
+    }
 
-    const post: Post = {
-      id: Date.now().toString(),
-      author: 'Você',
-      title: newPost.title,
-      content: newPost.content,
-      location: newPost.location,
-      date: 'Agora',
-      likes: 0,
-      comments: 0
-    };
-
-    setPosts([post, ...posts]);
-    setNewPost({ title: '', content: '', location: '' });
-    setShowCreateForm(false);
+    try {
+      setSubmitting(true);
+      const createdPost = await createPost(newPost);
+      
+      // Adicionar o novo post no topo da lista
+      setPosts([createdPost, ...posts]);
+      
+      // Dar pontos para o usuário por criar um post
+      if (user.id) {
+        await awardPoints(user.id, 'post', `Post: ${newPost.title}`, 5);
+      }
+      
+      // Limpar formulário
+      setNewPost({ title: '', content: '', location: '' });
+      setShowCreateForm(false);
+      setError('');
+    } catch (err) {
+      setError('Erro ao criar post. Tente novamente.');
+      console.error('Erro ao criar post:', err);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleLike = (postId: string) => {
-    setPosts(posts.map(post => 
-      post.id === postId 
-        ? { ...post, likes: post.likes + 1 }
-        : post
-    ));
+  // Função para curtir/descurtir post
+  const handleLike = async (postId: string) => {
+    if (!user) {
+      setError('Você precisa estar logado para curtir posts');
+      return;
+    }
+
+    try {
+      const result = await toggleLikePost(postId);
+      
+      // Atualizar o post na lista
+      setPosts(posts.map(post => 
+        post.id === postId 
+          ? { ...post, likes: result.likesCount, isLiked: result.liked }
+          : post
+      ));
+
+      // Dar pontos se curtiu (não descurtiu)
+      if (result.liked && user.id) {
+        await awardPoints(user.id, 'like', 'Curtida em post', 1);
+      }
+    } catch (err) {
+      console.error('Erro ao curtir post:', err);
+    }
+  };
+
+  // Função para formatar data
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 60) {
+      return `${diffInMinutes} min atrás`;
+    } else if (diffInMinutes < 1440) {
+      return `${Math.floor(diffInMinutes / 60)} h atrás`;
+    } else {
+      return `${Math.floor(diffInMinutes / 1440)} dias atrás`;
+    }
   };
 
   return (
@@ -165,9 +195,21 @@ export default function Feed() {
                   <div className="flex gap-2">
                     <button
                       type="submit"
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition duration-300"
+                      disabled={submitting}
+                      className={`px-4 py-2 rounded-md transition duration-300 ${
+                        submitting 
+                          ? 'bg-gray-400 cursor-not-allowed' 
+                          : 'bg-blue-600 hover:bg-blue-700'
+                      } text-white`}
                     >
-                      Publicar
+                      {submitting ? (
+                        <div className="flex items-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Publicando...
+                        </div>
+                      ) : (
+                        'Publicar (+5 pts)'
+                      )}
                     </button>
                     <button
                       type="button"
@@ -181,16 +223,40 @@ export default function Feed() {
               </div>
             )}
 
-            {/* Timeline de Posts */}
-            <div className="space-y-6">
-              {posts.map((post) => (
+            {/* Mensagem de Erro */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <p className="text-red-600">{error}</p>
+              </div>
+            )}
+
+            {/* Loading */}
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="text-gray-600 mt-4">Carregando posts...</p>
+              </div>
+            ) : (
+              <>
+                {/* Timeline de Posts */}
+                <div className="space-y-6">
+                  {posts.length === 0 ? (
+                    <div className="text-center py-12">
+                      <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                      </svg>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum post ainda</h3>
+                      <p className="text-gray-600">Seja o primeiro a compartilhar uma experiência!</p>
+                    </div>
+                  ) : (
+                    posts.map((post) => (
                 <div key={post.id} className="bg-white rounded-lg shadow-md overflow-hidden">
                   {/* Header do Post */}
                   <div className="p-6 pb-4">
                     <div className="flex items-start justify-between">
                       <div>
                         <h3 className="font-semibold text-gray-900">{post.author}</h3>
-                        <p className="text-sm text-gray-500">{post.date} • {post.location}</p>
+                        <p className="text-sm text-gray-500">{formatDate(post.createdAt)} • {post.location}</p>
                       </div>
                       <span className="text-blue-600 text-sm font-medium">+5 pontos</span>
                     </div>
@@ -203,10 +269,10 @@ export default function Feed() {
                   </div>
 
                   {/* Imagem */}
-                  {post.image && (
+                  {post.images && post.images.length > 0 && (
                     <div className="px-6 pb-4">
                       <img 
-                        src={post.image} 
+                        src={post.images[0]} 
                         alt={post.title}
                         className="w-full h-64 object-cover rounded-lg"
                       />
@@ -234,8 +300,11 @@ export default function Feed() {
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
+                    ))
+                  )}
+                </div>
+              </>
+            )}
 
             {/* CTA */}
             <div className="mt-8 text-center">
