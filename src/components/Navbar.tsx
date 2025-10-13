@@ -46,12 +46,6 @@ const Navbar = () => {
               >
                 Roteiros
               </a>
-              <a 
-                href="/sobre-nos" 
-                className="hover:bg-blue-700 hover:bg-opacity-75 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ease-in-out transform hover:scale-105"
-              >
-                Sobre Nós
-              </a>
             </div>
 
             {/* User Menu */}
@@ -137,9 +131,6 @@ const Navbar = () => {
               </a>
               <a href="/destinos" className="block hover:bg-blue-700 px-3 py-2 rounded-md text-base font-medium">
                 Roteiros
-              </a>
-              <a href="/sobre-nos" className="block hover:bg-blue-700 px-3 py-2 rounded-md text-base font-medium">
-                Sobre Nós
               </a>
               {user ? (
                 <>
