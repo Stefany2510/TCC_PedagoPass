@@ -15,37 +15,24 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg">
+    <nav className="bg-white text-gray-800 shadow-sm border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <h1 className="text-xl md:text-2xl font-bold tracking-wide">
-                PedagoPass – Rede Social Educativa
+              <h1 className="text-lg md:text-xl font-semibold tracking-tight text-gray-900">
+                PedagoPass
+                <span className="block text-sm text-gray-500 font-normal">Viagens e formação para professores</span>
               </h1>
             </div>
           </div>
           
           <div className="hidden md:flex items-center space-x-6">
             <div className="flex items-baseline space-x-6">
-              <a 
-                href="/feed" 
-                className="hover:bg-blue-700 hover:bg-opacity-75 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ease-in-out transform hover:scale-105"
-              >
-                Feed
-              </a>
-              <a 
-                href="/comunidades" 
-                className="hover:bg-blue-700 hover:bg-opacity-75 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ease-in-out transform hover:scale-105"
-              >
-                Comunidades
-              </a>
-              <a 
-                href="/destinos" 
-                className="hover:bg-blue-700 hover:bg-opacity-75 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ease-in-out transform hover:scale-105"
-              >
-                Roteiros
-              </a>
+              <a href="/feed" className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">Feed</a>
+              <a href="/comunidades" className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">Comunidades</a>
+              <a href="/destinos" className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">Roteiros</a>
+              <a href="/professores" className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">Professores</a>
             </div>
 
             {/* User Menu */}
@@ -53,35 +40,35 @@ const Navbar = () => {
               <div className="relative">
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center space-x-2 bg-blue-700 hover:bg-blue-600 px-4 py-2 rounded-lg transition-all duration-200"
+                  className="flex items-center space-x-2 bg-gray-100 hover:bg-gray-50 px-3 py-2 rounded-md transition-all duration-150"
                 >
                   <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
                     <span className="text-blue-600 font-bold text-sm">
                       {user.name?.charAt(0).toUpperCase()}
                     </span>
                   </div>
-                  <span className="text-sm font-medium">{user.name}</span>
+                  <span className="text-sm font-medium text-gray-800">{user.name}</span>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
 
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-md py-2 z-50">
                     <div className="px-4 py-2 border-b border-gray-200">
                       <p className="text-sm text-gray-600">Logado como:</p>
                       <p className="text-sm font-medium text-gray-900">{user.email}</p>
                     </div>
                     <a
                       href="/perfil"
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200 block"
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150 block"
                       onClick={() => setIsUserMenuOpen(false)}
                     >
                       Meu Perfil
                     </a>
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200"
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-150"
                     >
                       Sair
                     </button>
@@ -90,18 +77,8 @@ const Navbar = () => {
               </div>
             ) : (
               <div className="flex space-x-3">
-                <a
-                  href="/login"
-                  className="bg-blue-700 hover:bg-blue-600 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
-                >
-                  Entrar
-                </a>
-                <a
-                  href="/cadastro"
-                  className="bg-white text-blue-600 hover:bg-gray-100 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
-                >
-                  Cadastrar
-                </a>
+                <a href="/login" className="px-3 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50">Entrar</a>
+                <a href="/cadastro" className="px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">Cadastrar</a>
               </div>
             )}
           </div>

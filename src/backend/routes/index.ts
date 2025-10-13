@@ -4,6 +4,7 @@ import UserController from '../controllers/UserController';
 import DestinoController from '../controllers/DestinoController';
 import { PostController } from '../controllers/PostController';
 import { PointsController } from '../controllers/PointsController';
+import SuggestionsController from '../controllers/SuggestionsController';
 
 const router = Router();
 
@@ -49,5 +50,9 @@ router.get('/posts/user/:userId', (req, res) => postController.getPostsByUser(re
 router.get('/users/:userId/points', (req, res) => pointsController.getUserPoints(req, res));
 router.get('/users/me/points', (req, res) => pointsController.getMyPoints(req, res));
 router.post('/points/award', (req, res) => pointsController.awardPoints(req, res));
+
+// Rotas de sugestões (formulário de professores)
+router.post('/suggestions', (req, res) => SuggestionsController.create(req, res));
+router.get('/suggestions', (req, res) => SuggestionsController.list(req, res));
 
 export default router;
