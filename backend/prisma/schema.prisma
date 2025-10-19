@@ -1,0 +1,177 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String            @id @default(uuid())
+  email              String            @unique
+  password           String
+  name               String
+  role               UserRole          @default(TEACHER)
+  avatarUrl          String?
+  bio                String?           @db.Text
+  escola             String?
+  cidade             String?
+  estado             String?
+  pontos             Int               @default(0)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  comments           Comment[]
+  createdCommunities Community[]       @relation("CommunityCreator")
+  communityMembers   CommunityMember[]
+  likes              Like[]
+  pointsHistory      PointsHistory[]
+  posts              Post[]
+
+  @@map("users")
+}
+
+model Community {
+  id           String            @id @default(uuid())
+  name         String
+  slug         String            @unique
+  description  String            @db.Text
+  topic        CommunityTopic
+  isPrivate    Boolean           @default(false)
+  coverImage   String?
+  rules        String?           @db.Text
+  membersCount Int               @default(0)
+  postsCount   Int               @default(0)
+  creatorId    String
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  creator      User              @relation("CommunityCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  members      CommunityMember[]
+  posts        Post[]
+
+  @@index([creatorId])
+  @@index([slug])
+  @@index([topic])
+  @@map("communities")
+}
+
+model CommunityMember {
+  id          String     @id @default(uuid())
+  userId      String
+  communityId String
+  role        MemberRole @default(MEMBER)
+  joinedAt    DateTime   @default(now())
+  community   Community  @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, communityId])
+  @@index([userId])
+  @@index([communityId])
+  @@map("community_members")
+}
+
+model Post {
+  id            String     @id @default(uuid())
+  content       String     @db.Text
+  authorId      String
+  communityId   String?
+  likesCount    Int        @default(0)
+  commentsCount Int        @default(0)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  comments      Comment[]
+  likes         Like[]
+  media         Media[]
+  author        User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  community     Community? @relation(fields: [communityId], references: [id])
+
+  @@index([authorId])
+  @@index([communityId])
+  @@index([createdAt])
+  @@map("posts")
+}
+
+model Media {
+  id        String    @id @default(uuid())
+  postId    String
+  type      MediaType
+  url       String
+  createdAt DateTime  @default(now())
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@map("media")
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String   @db.Text
+  postId    String
+  authorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([authorId])
+  @@map("comments")
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+  @@map("likes")
+}
+
+model PointsHistory {
+  id        String   @id @default(uuid())
+  userId    String
+  points    Int
+  reason    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("points_history")
+}
+
+enum UserRole {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+enum CommunityTopic {
+  PEDAGOGIA
+  TECNOLOGIA
+  INCLUSAO
+  GESTAO
+  METODOLOGIAS
+  AVALIACAO
+  FORMACAO
+  DISCIPLINAS
+  INTERCAMBIO
+  PROJETOS
+  OUTROS
+}
+
+enum MemberRole {
+  CREATOR
+  ADMIN
+  MODERATOR
+  MEMBER
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
