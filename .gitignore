@@ -10,9 +10,23 @@
 /.next/
 /out/
 
+# frontend build output
+frontend/.next/
+frontend/out/
+
 # production
 /build
 /dist
+
+# backend build output
+backend/dist/
+
+# environment files
+backend/.env
+backend/.env.local
+backend/.env.development
+backend/.env.production
+backend/prisma/dev.db
 
 # misc
 .DS_Store
